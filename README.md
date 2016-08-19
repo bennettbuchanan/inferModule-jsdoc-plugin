@@ -2,7 +2,8 @@
  
 Using JSDoc's `-c` option, pass the JSDoc conf.json that has the inferModule.js
 plugin enabled. If necessary, specify a string to replace the file path with as
-module name using `-q` option.
+module name using `-q` option. If `-q` is not passed, then the module defaults
+to the file name (without the file extension).
 
 For example, to have JSDoc interpret `lib/foo/a.js` as the module `baz/a`, use
 the following command from `jsdoc_plugin/`: `./node_modules/.bin/jsdoc
