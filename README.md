@@ -7,7 +7,7 @@ to the file name (without the file extension).
 
 For example, to have JSDoc interpret `lib/foo/a.js` as the module `baz/a`, use
 the following command from `jsdoc_plugin/`: `./node_modules/.bin/jsdoc
-lib/foo/a.js -q "baz/" -c ./node_modules/jsdoc/conf.json`. The generated
+lib/foo/a.js -q baz -c ./node_modules/jsdoc/conf.json`. The generated
 documentation is in `out/`.
 
 You may have `jsdoc` installed differently. In that case, you will need to
