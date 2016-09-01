@@ -5,8 +5,8 @@ var visitNode = inferModule.astNodeVisitor.visitNode;
 
 var node = { comments: [ { raw: '' } ] };
 var op_conf = {
-    "inferModule":{
-        "exclude": "lib/foo/*.",
+    "inferModule": {
+        "exclude": [],
         "schema": [
             { "from": "^lib\\/foo\\/(.*)\\.js$", "to": "bar/$1" },
             { "from": "^lib\\/fin\\/(.*)\\.js$", "to": "baz/$1" },
@@ -17,7 +17,6 @@ var op_conf = {
 
 describe("Infer Module", function() {
     it("Converts the path appropriately for module naming.", function() {
-        console.log(visitNode(node, {}, {}, 'lib/foo/a.js', op_conf));
         expect(visitNode(node, {}, {}, 'lib/foo/a.js', op_conf)).to.equal('bar/a');
     });
 
@@ -33,12 +32,13 @@ describe("Infer Module", function() {
         expect(visitNode(node, {}, {}, 'lib/a.py', op_conf)).to.equal('lib/a');
     });
 
-    // it("If no conf.json is specified, throw an error.", function() {
-    //     expect(visitNode.bind(node, {}, {}, 'lib/a.py', op_conf)).to.throw(
-    //         "No conf.json specifieds.");
-    // });
+    it("Does not process files that match the exclude object.", function() {
+        op_conf.inferModule.exclude = ["lib/foo/*.js"];
+        expect(visitNode(node, {}, {}, 'lib/foo/a.js', op_conf)).to.equal(undefined);
+    });
 
     it("If module tag is already present, use it.", function () {
+        op_conf.inferModule.exclude = [];
         node = { comments: [ { raw: '**\n * @module this/that' } ] };
 
         expect(visitNode(node, {}, {}, 'lib/a.js', op_conf)).to.equal(undefined);
