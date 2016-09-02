@@ -1,6 +1,6 @@
 {
   "name": "inferModule-jsdoc-plugin",
-  "version": "1.0.0",
+  "version": "1.0.4",
   "description": "A JSdoc plugin that automates the naming of modules.",
   "main": "index.js",
   "dependencies": {

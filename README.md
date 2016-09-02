@@ -45,4 +45,4 @@ the command and paths according to your installation.
 ## Testing
 
 This plugin uses mocha and chai to handle testing. To run the testing suite,
-from `jsdoc_plugin/` run `npm test`.
+from `inferModule-jsdoc-plugin/` run `npm install`, then `npm test`.
