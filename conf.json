@@ -1,0 +1,9 @@
+{
+    "plugins": ["inferModule"],
+    "inferModule": {
+        "exclude": [],
+        "schema": [
+            { "from": "", "to": ""}
+        ]
+    }
+}
