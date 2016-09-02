@@ -33,8 +33,9 @@ describe("Infer Module", function() {
     });
 
     it("Does not process files that match the exclude object.", function() {
-        op_conf.inferModule.exclude = ["lib/foo/*.js"];
-        expect(visitNode(node, {}, {}, 'lib/foo/a.js', op_conf)).to.equal(undefined);
+        // Note that when testing exlude, the file itself has to actually exist.
+        op_conf.inferModule.exclude = ["test/*.js"];
+        expect(visitNode(node, {}, {}, 'test/inferModule.js', op_conf)).to.equal(undefined);
     });
 
     it("If module tag is already present, use it.", function () {
