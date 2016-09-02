@@ -1,7 +1,7 @@
 {
-  "name": "jsdoc_plugin",
+  "name": "inferModule-jsdoc-plugin",
   "version": "1.0.0",
-  "description": "A plugin to automate the naming of modules relative to the project name.",
+  "description": "A JSdoc plugin that automates the naming of modules.",
   "main": "index.js",
   "dependencies": {
     "chai": "^3.5.0",
@@ -16,12 +16,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bennettbuchanan/jsdoc_plugin.git"
+    "url": "git+https://github.com/bennettbuchanan/inferModule-jsdoc-plugin.git"
   },
   "author": "Bennett Buchanan",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/bennettbuchanan/jsdoc_plugin/issues"
+    "url": "https://github.com/bennettbuchanan/inferModule-jsdoc-plugin/issues"
   },
-  "homepage": "https://github.com/bennettbuchanan/jsdoc_plugin#readme"
+  "homepage": "https://github.com/bennettbuchanan/inferModule-jsdoc-plugin#readme"
 }
