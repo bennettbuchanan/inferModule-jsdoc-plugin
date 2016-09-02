@@ -1,6 +1,6 @@
 var assert = require("chai").assert;
 var expect = require("chai").expect;
-var inferModule = require("../node_modules/jsdoc/plugins/inferModule.js");
+var inferModule = require("../inferModule.js");
 var visitNode = inferModule.astNodeVisitor.visitNode;
 
 var node = { comments: [ { raw: '' } ] };
