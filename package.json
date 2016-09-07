@@ -4,11 +4,11 @@
   "description": "A JSdoc plugin that automates the naming of modules.",
   "main": "index.js",
   "dependencies": {
-    "chai": "^3.5.0",
     "glob": "^7.0.6",
     "jsdoc": "^3.4.0"
   },
   "devDependencies": {
+    "chai": "^3.5.0",
     "mocha": "^3.0.2"
   },
   "scripts": {
