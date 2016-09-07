@@ -1,30 +1,18 @@
 var path = require('path');
 var fs = require('fs');
 var glob = require("glob");
+var env = require("jsdoc/env");
+
+var config = env.conf.inferModule || {};
 
 exports.astNodeVisitor = {
-    visitNode: function(node, e, parser, currentSourceName, test_conf) {
-        for (var i = 0; i < process.argv.length; i++) {
-            if (process.argv[i] == "-c") {
-                var conf = process.argv[i + 1];
-            }
-        }
-
-        if (test_conf !== undefined) {
-            conf = JSON.stringify(test_conf);
-        } else if (conf == undefined) {
-            throw new Error('No conf.json specified.');
-        }
-
-        if (test_conf == undefined) {
-            conf = fs.readFileSync(conf);
-        }
-
+    visitNode: function(node, e, parser, currentSourceName) {
         if (node.comments != undefined) {
             // If the configuration file is empty, do nothing. Otherwise store
             // value in conf.
-            if ((conf = JSON.parse(conf)).inferModule.schema == undefined) {
-                throw new Error('No "schema" key is defined in conf.json.');
+            if (config.schema == undefined) {
+                throw new Error('No "schema" key is defined in ' +
+                                'inferModule\'s configuration.');
             }
 
             // Isolate the path relative to the project's root.
@@ -33,10 +21,10 @@ exports.astNodeVisitor = {
             relPath = relPath + '/' + parsedPath.base;
 
             // If the exclude object is present, test for files to exlude.
-            if (conf.inferModule.exclude !== undefined) {
+            if (config.exclude !== undefined) {
                 var match_found = false;
 
-                conf.inferModule.exclude.map(function(item) {
+                config.exclude.map(function(item) {
                     glob.sync(item).map(function(match) {
                         if (relPath === match) {
                             match_found = true;
@@ -52,7 +40,7 @@ exports.astNodeVisitor = {
 
             // Call the map method to check if an object in the inferModule
             // array is applicable. If it is, then update relPath to the change.
-            conf.inferModule.schema.map(function(item) {
+            config.schema.map(function(item) {
                 var re = new RegExp(item.from);
 
                 if (relPath != relPath.replace(re, item.to)) {
@@ -72,12 +60,6 @@ exports.astNodeVisitor = {
             if (!/@module/.test(comment[1])) {
                 var divider =  mod.dir != '' ? '/' : '';
                 var moduleName = mod.dir + divider + mod.name;
-
-                // If running the test suite, return the module name. Otherwise,
-                // add the module tag to the AST node.
-                if (test_conf != undefined) {
-                    return moduleName;
-                }
 
                 comment.splice(1, 0, ' * @module ' + moduleName);
                 node.comments[0].raw = comment.join('\n');
