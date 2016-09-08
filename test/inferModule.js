@@ -1,47 +1,76 @@
-var assert = require("chai").assert;
 var expect = require("chai").expect;
-var inferModule = require("../inferModule.js");
-var visitNode = inferModule.astNodeVisitor.visitNode;
+var mockery = require("mockery");
 
-var node = { comments: [ { raw: '' } ] };
-var op_conf = {
-    "inferModule": {
-        "exclude": [],
-        "schema": [
-            { "from": "^lib\\/foo\\/(.*)\\.js$", "to": "bar/$1" },
-            { "from": "^lib\\/fin\\/(.*)\\.js$", "to": "baz/$1" },
-            { "from": "^lib\\/(.*\\.js$)", "to": "$1"}
-        ]
-    }
-}
+describe("inferModule.visitNode", function() {
+    var inferModule;
+    var visitNode;
+    var node;
+    var op_conf;
 
-describe("Infer Module", function() {
+    beforeEach(function () {
+        node = { comments: [ { raw: '' } ] };
+        op_conf = {
+            "inferModule": {
+                "exclude": [],
+                "schema": [
+                    { "from": "^lib\\/foo\\/(.*)\\.js$", "to": "bar/$1" },
+                    { "from": "^lib\\/fin\\/(.*)\\.js$", "to": "baz/$1" },
+                    { "from": "^lib\\/(.*\\.js$)", "to": "$1"}
+                ]
+            }
+        };
+
+        // We mock jsdoc/env so that we can run the tests outside jsdoc,
+        // and pass arbitrary configuration.
+        mockery.enable({
+            useCleanCache: true,
+            warnOnUnregistered: false,
+            warnOnReplace: false,
+        });
+
+        mockery.registerMock("jsdoc/env", {
+            conf: op_conf
+        });
+        inferModule = require("../inferModule.js");
+        visitNode = inferModule.astNodeVisitor.visitNode;
+    });
+
+    afterEach(function () {
+        mockery.disable();
+    });
+
     it("Converts the path appropriately for module naming.", function() {
-        expect(visitNode(node, {}, {}, 'lib/foo/a.js', op_conf)).to.equal('bar/a');
+        visitNode(node, {}, {}, 'lib/foo/a.js');
+        expect(node.comments[0].raw).to.equal('\n * @module bar/a');
     });
 
     it("Regiters different mapping.", function() {
-        expect(visitNode(node, {}, {}, 'lib/fin/a.js', op_conf)).to.equal('baz/a');
+        visitNode(node, {}, {}, 'lib/fin/a.js');
+        expect(node.comments[0].raw).to.equal('\n * @module baz/a');
     });
 
     it("Handles a file with no path.", function() {
-        expect(visitNode(node, {}, {}, 'lib/a.js', op_conf)).to.equal('a');
+        visitNode(node, {}, {}, 'lib/a.js');
+        expect(node.comments[0].raw).to.equal('\n * @module a');
     });
 
     it("Does not alter naming of differing extensions.", function() {
-        expect(visitNode(node, {}, {}, 'lib/a.py', op_conf)).to.equal('lib/a');
+        visitNode(node, {}, {}, 'lib/a.py');
+        expect(node.comments[0].raw).to.equal('\n * @module lib/a');
     });
 
     it("Does not process files that match the exclude object.", function() {
         // Note that when testing exlude, the file itself has to actually exist.
         op_conf.inferModule.exclude = ["test/*.js"];
-        expect(visitNode(node, {}, {}, 'test/inferModule.js', op_conf)).to.equal(undefined);
+        visitNode(node, {}, {}, 'test/inferModule.js');
+        expect(node.comments[0].raw).to.equal('');
     });
 
     it("If module tag is already present, use it.", function () {
         op_conf.inferModule.exclude = [];
-        node = { comments: [ { raw: '**\n * @module this/that' } ] };
-
-        expect(visitNode(node, {}, {}, 'lib/a.js', op_conf)).to.equal(undefined);
+        var originalComment = '**\n * @module this/that';
+        node.comments[0].raw = originalComment;
+        visitNode(node, {}, {}, 'lib/a.js');
+        expect(node.comments[0].raw).to.equal(originalComment);
     });
 });
