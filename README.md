@@ -1,14 +1,14 @@
 # inferModule.js JSDoc Plugin
 
-Using JSDoc's `-c` option, pass the JSDoc `conf.json` that has the
-`inferModule.js` plugin enabled. In the `conf.json` file, using the key
+Using JSDoc's `-c` option, pass the JSDoc confiuration file that has the
+`inferModule.js` plugin enabled. In the configuration file, using the key
 `inferModule`, specify a `schema` array of
 [regexp](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Using_special_characters)
 replacement objects defining what you would like module names changed from and
-to (note that the regexp is a string in the JSON object so some excaping of
+to (note that the regexp is a string in the JSON object, so some escaping of
 characters may be in order). You may optionally set file paths that the
-inferModule plugin should exclude by including an `exlude` key. The globs
-patterns that can be handled are described further
+inferModule plugin should exclude by including an `exclude` key. The glob
+patterns that can be handled are described
 [here](https://github.com/isaacs/node-glob#glob-primer).
 
 Here is an example basic `conf.json` to enable the plugin:
@@ -37,7 +37,8 @@ JSDoc's behavior.
 For example, to have JSDoc interpret `lib/foo/a.js` as the module `baz/a` as
 specified in the example conf.json above, use the following command from
 `jsdoc_plugin/`: `./node_modules/.bin/jsdoc lib/* -c path/to/conf.json`. The
-generated documentation based on the `inferModule` key values is in `out/`.
+generated documentation based on `inferModule` schema array objects is in
+`out/`.
 
 You may have `jsdoc` installed differently. In that case, you will need to alter
 the command and paths according to your installation.
