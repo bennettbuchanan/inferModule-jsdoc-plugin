@@ -1,32 +1,33 @@
 {
-    "name": "inferModule-jsdoc-plugin",
-    "version": "1.0.4",
-    "description": "A JSdoc plugin that automates the naming of modules.",
-    "main": "index.js",
-    "dependencies": {
-        "glob": "^7.0.6"
-    },
-    "devDependencies": {
-        "chai": "^3.5.0",
-        "mocha": "^3.0.2",
-        "mockery": "^1.7.0",
-        "eslint": "^2.10.2",
-        "eslint-config-lddubeau-base": "0.0.1"
-    },
-    "peerDependencies": {
-        "jsdoc": "^3.4.0"
-    },
-    "scripts": {
-        "test": "./node_modules/.bin/mocha --reporter spec"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/bennettbuchanan/inferModule-jsdoc-plugin.git"
-    },
-    "author": "Bennett Buchanan",
-    "license": "ISC",
-    "bugs": {
-        "url": "https://github.com/bennettbuchanan/inferModule-jsdoc-plugin/issues"
-    },
-    "homepage": "https://github.com/bennettbuchanan/inferModule-jsdoc-plugin#readme"
+  "name": "inferModule-jsdoc-plugin",
+  "version": "1.0.4",
+  "description": "A JSdoc plugin that automates the naming of modules.",
+  "main": "index.js",
+  "dependencies": {
+    "glob": "^7.0.6",
+    "node-cache": "^3.2.1"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^3.0.2",
+    "mockery": "^1.7.0",
+    "eslint": "^2.10.2",
+    "eslint-config-lddubeau-base": "0.0.1"
+  },
+  "peerDependencies": {
+    "jsdoc": "^3.4.0"
+  },
+  "scripts": {
+    "test": "./node_modules/.bin/mocha --reporter spec"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bennettbuchanan/inferModule-jsdoc-plugin.git"
+  },
+  "author": "Bennett Buchanan",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/bennettbuchanan/inferModule-jsdoc-plugin/issues"
+  },
+  "homepage": "https://github.com/bennettbuchanan/inferModule-jsdoc-plugin#readme"
 }

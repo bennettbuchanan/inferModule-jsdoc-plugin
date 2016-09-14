@@ -1,10 +1,54 @@
 var path = require("path");
 var glob = require("glob");
 var env = require("jsdoc/env");
+var NodeCache = require( "node-cache" );
 
 /* global process, exports */
 
 var config = env.conf.inferModule || {};
+var myCache = new NodeCache();
+
+exports.handlers = {
+  parseBegin: function(e) {
+    // Get the files from the cache, otherwise cache the files.
+    try {
+      myCache.get( "excludedFiles", true );
+    } catch( err ) {
+
+      var excludeArr = [];
+
+      e.sourcefiles.map(function fileMap(file) {
+        var parsedPath = path.parse(file);
+        var relPath = parsedPath.dir.replace(process.cwd() + "/", "");
+        relPath = relPath + "/" + parsedPath.base;
+
+        // Set the relative file path in cache for module naming.
+        myCache.set(file, relPath);
+
+        // If the exclude object is present, test for files to exclude.
+        if (config.exclude !== undefined) {
+
+          config.exclude.map(function excludeMap(item) {
+            return glob.sync(item).map(function globMap(match) {
+              if (relPath === match) {
+                excludeArr.push(match);
+              }
+              return true;
+            });
+          });
+        };
+      });
+
+      myCache.set( "excludedFiles", excludeArr, function( err, success ){
+        if( !err && success ){
+          if (!success) {
+            throw Error("Exclude file parsing failed.");
+          }
+        }
+      });
+    }
+  }
+};
 
 exports.astNodeVisitor = {
   visitNode: function find(node, e, parser, currentSourceName) {
@@ -18,29 +62,12 @@ exports.astNodeVisitor = {
                         "inferModule's configuration.");
       }
 
-      // Isolate the path relative to the project's root.
-      var parsedPath = path.parse(currentSourceName);
-      var relPath = parsedPath.dir.replace(process.cwd() + "/", "");
-      relPath = relPath + "/" + parsedPath.base;
+      // Retrieve the relative file path from cache.
+      var relPath = myCache.get(currentSourceName);
 
-      // If the exclude object is present, test for files to exclude.
-      if (config.exclude !== undefined) {
-        var matchFound = false;
-
-        config.exclude.map(function excludeMap(item) {
-          return glob.sync(item).map(function globMap(match) {
-            if (relPath === match) {
-              matchFound = true;
-            }
-            return matchFound;
-          });
-        });
-
-        // If the relative path is matched by the exclude object,
-        // return.
-        if (matchFound) {
-          return;
-        }
+      // If the file is one to be excluded, return.
+      if (myCache.get("excludedFiles").indexOf(relPath) != -1) {
+        return;
       }
 
       // Call the map method to check if an object in the inferModule
@@ -58,6 +85,15 @@ exports.astNodeVisitor = {
       // necessary because if a module with the .js extension is added to
       // the file, the output will just be "js".
       var mod = path.parse(relPath);
+
+      // If the comment is non-existant, or a one-line comment (e.g., a
+      // `@lends` tag), then create a new comment for the file.
+
+      if (node.comments[0] === undefined) {
+
+        console.log("No toplevel comment for JSDoc in " + currentSourceName);
+        node.comments = [{ raw: '/**\n */' }];
+      }
 
       // If the comment does not have a module tag, then add one that is
       // the concatenated replacement string and extensionless filename.
