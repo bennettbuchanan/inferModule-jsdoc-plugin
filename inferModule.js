@@ -10,7 +10,7 @@ var myCache = new NodeCache();
 
 exports.handlers = {
   parseBegin: function(e) {
-    // Get the files from the cache, otherwise cache the files.
+    // Try to retrieve cached files, otherwise cache the exlcuded files.
     try {
       myCache.get( "excludedFiles", true );
     } catch( err ) {
@@ -22,7 +22,7 @@ exports.handlers = {
         var relPath = parsedPath.dir.replace(process.cwd() + "/", "");
         relPath = relPath + "/" + parsedPath.base;
 
-        // Set the relative file path in cache for module naming.
+        // Set the relative file path in cache for later module naming.
         myCache.set(file, relPath);
 
         // If the exclude object is present, test for files to exclude.
@@ -42,7 +42,8 @@ exports.handlers = {
       myCache.set( "excludedFiles", excludeArr, function( err, success ){
         if( !err && success ){
           if (!success) {
-            throw Error("Exclude file parsing failed.");
+            var err = new Error("Exclude file parsing failed.");
+            throw (err);
           }
         }
       });
@@ -55,18 +56,32 @@ exports.astNodeVisitor = {
     "use strict";
 
     if (node.comments !== undefined) {
-      // If the configuration file is empty, do nothing. Otherwise store
-      // value in conf.
-      if (config.schema === undefined) {
-        throw new Error("No 'schema' key is defined in " +
-                        "inferModule's configuration.");
-      }
-
       // Retrieve the relative file path from cache.
       var relPath = myCache.get(currentSourceName);
 
       // If the file is one to be excluded, return.
       if (myCache.get("excludedFiles").indexOf(relPath) != -1) {
+        return;
+      }
+
+      // If the comment is non-existant, or a one-line comment (e.g., a
+      // `@lends` tag), then create a new comment for the file.
+      if (node.comments[0] === undefined) {
+        var err = new Error("No toplevel comment for JSDoc in " +
+                              currentSourceName);
+        throw (err);
+      }
+
+      // If the configuration file is empty, do nothing. Otherwise store
+      // value in conf.
+      if (config.schema === undefined) {
+        var err = new Error("No 'schema' key is defined in " +
+                              "inferModule's configuration.");
+        throw (err);
+      }
+
+      // If the JSDoc comment already has a module tag, do not process.
+      if (/@module/.test(node.comments[0].raw)) {
         return;
       }
 
@@ -86,26 +101,14 @@ exports.astNodeVisitor = {
       // the file, the output will just be "js".
       var mod = path.parse(relPath);
 
-      // If the comment is non-existant, or a one-line comment (e.g., a
-      // `@lends` tag), then create a new comment for the file.
-
-      if (node.comments[0] === undefined) {
-
-        console.log("No toplevel comment for JSDoc in " + currentSourceName);
-        node.comments = [{ raw: '/**\n */' }];
-      }
-
       // If the comment does not have a module tag, then add one that is
       // the concatenated replacement string and extensionless filename.
       var comment = node.comments[0].raw.split("\n");
+      var divider = mod.dir !== "" ? "/" : "";
+      var moduleName = mod.dir + divider + mod.name;
 
-      if (!/@module/.test(comment[1])) {
-        var divider = mod.dir !== "" ? "/" : "";
-        var moduleName = mod.dir + divider + mod.name;
-
-        comment.splice(1, 0, " * @module " + moduleName);
-        node.comments[0].raw = comment.join("\n");
-      }
+      comment.splice(1, 0, " * @module " + moduleName);
+      node.comments[0].raw = comment.join("\n");
     }
   },
 };
