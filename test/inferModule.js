@@ -86,6 +86,20 @@ describe("inferModule.visitNode", function describe() {
     visitNode(node, {}, {}, "lib/a.js");
     expect(node.comments[0].raw).to.equal(originalComment);
   });
+
+
+  it("If a file is renamed and then matched again, the additional renaming " +
+     "is disregarded.", function it() {
+       opConf.inferModule.schema =
+         [
+           { "from": "lib/a.js", "to": "lib/b" },
+           { "from": "lib/b", "to": "lib/c" }
+         ];
+
+       parseBegin({ sourcefiles: [ 'lib/a.js' ] });
+       visitNode(node, {}, {}, "lib/a.js");
+       expect(node.comments[0].raw).to.equal("/**\n * @module lib/b");
+     });
 });
 
 describe("JSDoc Command line test.", function() {

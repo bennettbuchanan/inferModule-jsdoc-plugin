@@ -86,16 +86,16 @@ exports.astNodeVisitor = {
         return;
       }
 
-      // Call the map method to check if an object in the inferModule
+      // Loop through config.schema to check if an object in the inferModule
       // array is applicable. If it is, then update relPath to the change.
-      config.schema.map(function schemaMap(item) {
-        var re = new RegExp(item.from);
+      for (var i = 0; i < config.schema.length; i++) {
+        var re = new RegExp(config.schema[i].from);
 
-        if (relPath !== relPath.replace(re, item.to)) {
-          relPath = relPath.replace(re, item.to);
+        if (relPath !== relPath.replace(re, config.schema[i].to)) {
+          relPath = relPath.replace(re, config.schema[i].to);
+          break;
         }
-        return relPath;
-      });
+      }
 
       // Parse the path regardless if it has been altered. This is
       // necessary because if a module with the .js extension is added to
