@@ -1,5 +1,9 @@
 # inferModule.js JSDoc Plugin
 
+No more `@module` tags in your JSDoc comments. Just define module names using
+regular expressions in your configuration file and generate your JSDoc
+documentation.
+
 Using JSDoc's `-c` option, pass the JSDoc confiuration file that has the
 `inferModule.js` plugin enabled. In the configuration file, using the key
 `inferModule`, specify a `schema` array of
@@ -32,7 +36,8 @@ file extension). Additionally, if the file comment already has a `@module` tag,
 the module name in the tag takes precedence, even if the file is matched (the
 `@module` tag can be located anywhere in the comment). If the
 `inferModule.schema` key is missing from `conf.json`, the plugin does not alter
-JSDoc's behavior.
+JSDoc's behavior. Each file must contain a toplevel comment in the simplest
+form.
 
 For example, to have JSDoc interpret `lib/foo/a.js` as the module `baz/a` as
 specified in the example conf.json above, use the following command from

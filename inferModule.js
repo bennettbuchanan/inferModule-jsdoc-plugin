@@ -7,6 +7,7 @@ var NodeCache = require( "node-cache" );
 
 var config = env.conf.inferModule || {};
 var myCache = new NodeCache();
+var err;
 
 exports.handlers = {
   parseBegin: function(e) {
@@ -67,7 +68,7 @@ exports.astNodeVisitor = {
       // If the comment is non-existant, or a one-line comment (e.g., a
       // `@lends` tag), then create a new comment for the file.
       if (node.comments[0] === undefined) {
-        var err = new Error("No toplevel comment for JSDoc in " +
+        err = new Error("No toplevel comment for JSDoc in " +
                               currentSourceName);
         throw (err);
       }
@@ -75,7 +76,7 @@ exports.astNodeVisitor = {
       // If the configuration file is empty, do nothing. Otherwise store
       // value in conf.
       if (config.schema === undefined) {
-        var err = new Error("No 'schema' key is defined in " +
+        err = new Error("No 'schema' key is defined in " +
                               "inferModule's configuration.");
         throw (err);
       }

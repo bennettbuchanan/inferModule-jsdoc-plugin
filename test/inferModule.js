@@ -1,5 +1,6 @@
 var expect = require("chai").expect;
 var mockery = require("mockery");
+const exec = require('child_process').exec;
 
 /* global it, describe, beforeEach, afterEach */
 
@@ -85,24 +86,26 @@ describe("inferModule.visitNode", function describe() {
     visitNode(node, {}, {}, "lib/a.js");
     expect(node.comments[0].raw).to.equal(originalComment);
   });
+});
 
-  it("Test", function it() {
-    parseBegin({ sourcefiles: [ 'lib/a.py' ] });
-    node.comments[0].raw = "/**";
-    visitNode(node, {}, {}, "lib/a.py");
-    expect(node.comments[0].raw).to.equal("/**\n * @module lib/a");
+describe("JSDoc Command line test.", function() {
+  // Avoid 2000ms timeouts due to JSDoc processesing.
+  this.timeout(15000);
+
+  var captured_stdout;
+
+  before(function before(done) {
+
+    // Use command to run JSDoc from the command line to test integration.
+    exec("node_modules/.bin/jsdoc lib/a.js -c conf.json",
+         function execute(error, stdout, stderr) {
+           if (error) done(error);
+           captured_stdout = stdout;
+           done();
+         });
   });
 
-  // it("Adds a JSDoc comment if there is none in the file.", function it() {
-  //   node.comments[0].raw = "";
-  //   visitNode(node, {}, {}, "lib/a.py");
-  //   expect(node.comments[0].raw).to.equal("/**\n * @module lib/a");
-  // });
-
-  // it("Adds a @module tag before a @lends tag, if a JSDoc @lends tag appears " +
-  //    "first.", function it() {
-  //      node.comments[0].raw = "/** @lends test:*/";
-  //      visitNode(node, {}, {}, "lib/a.py");
-  //      expect(node.comments[0].raw).to.equal("/**\n * @module lib/a");
-  // });
+  it("Plugin integrates with JSDoc from command line.", function() {
+    expect(captured_stdout).to.equal("");
+  });
 });
