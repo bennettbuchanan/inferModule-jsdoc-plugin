@@ -60,7 +60,7 @@ exports.astNodeVisitor = {
       // Retrieve the relative file path from cache.
       var relPath = myCache.get(currentSourceName);
 
-      // If the file is one to be excluded, return.
+      // If the file is in the array of files to exclude, do not process.
       if (myCache.get("excludedFiles").indexOf(relPath) != -1) {
         return;
       }
