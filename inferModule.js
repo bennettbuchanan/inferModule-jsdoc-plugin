@@ -1,20 +1,20 @@
 var path = require("path");
 var glob = require("glob");
 var env = require("jsdoc/env");
-var NodeCache = require( "node-cache" );
+var NodeCache = require("node-cache");
 
 /* global process, exports */
 
 var config = env.conf.inferModule || {};
-var myCache = new NodeCache();
+var cache = new NodeCache();
 var err;
 
 exports.handlers = {
   parseBegin: function(e) {
     // Try to retrieve cached files, otherwise cache the exlcuded files.
     try {
-      myCache.get( "excludedFiles", true );
-    } catch( err ) {
+      cache.get("excludedFiles", true);
+    } catch (err) {
 
       var excludeArr = [];
 
@@ -24,7 +24,7 @@ exports.handlers = {
         relPath = relPath + "/" + parsedPath.base;
 
         // Set the relative file path in cache for later module naming.
-        myCache.set(file, relPath);
+        cache.set(file, relPath);
 
         // If the exclude object is present, test for files to exclude.
         if (config.exclude !== undefined) {
@@ -40,10 +40,10 @@ exports.handlers = {
         };
       });
 
-      myCache.set( "excludedFiles", excludeArr, function( err, success ){
-        if( !err && success ){
+      cache.set( "excludedFiles", excludeArr, function(err, success){
+        if (!err && success) {
           if (!success) {
-            var err = new Error("Exclude file parsing failed.");
+            err = new Error("Exclude file parsing failed.");
             throw (err);
           }
         }
@@ -58,10 +58,10 @@ exports.astNodeVisitor = {
 
     if (node.comments !== undefined) {
       // Retrieve the relative file path from cache.
-      var relPath = myCache.get(currentSourceName);
+      var relPath = cache.get(currentSourceName);
 
       // If the file is in the array of files to exclude, do not process.
-      if (myCache.get("excludedFiles").indexOf(relPath) != -1) {
+      if (cache.get("excludedFiles").indexOf(relPath) != -1) {
         return;
       }
 
@@ -69,7 +69,7 @@ exports.astNodeVisitor = {
       // `@lends` tag), then create a new comment for the file.
       if (node.comments[0] === undefined) {
         err = new Error("No toplevel comment for JSDoc in " +
-                              currentSourceName);
+                        currentSourceName);
         throw (err);
       }
 
@@ -77,7 +77,7 @@ exports.astNodeVisitor = {
       // value in conf.
       if (config.schema === undefined) {
         err = new Error("No 'schema' key is defined in " +
-                              "inferModule's configuration.");
+                        "inferModule's configuration.");
         throw (err);
       }
 
