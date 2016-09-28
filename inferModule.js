@@ -7,15 +7,16 @@ var NodeCache = require("node-cache");
 
 var config = env.conf.inferModule || {};
 var cache = new NodeCache();
-var err;
 
 exports.handlers = {
-  parseBegin: function(e) {
+  parseBegin: function parseBegin(e) {
+    "use strict";
+
     // Try to retrieve cached files, otherwise cache the exlcuded files.
     try {
       cache.get("excludedFiles", true);
-    } catch (err) {
-
+    }
+    catch (err) {
       var excludeArr = [];
 
       e.sourcefiles.map(function fileMap(file) {
@@ -28,7 +29,6 @@ exports.handlers = {
 
         // If the exclude object is present, test for files to exclude.
         if (config.exclude !== undefined) {
-
           config.exclude.map(function excludeMap(item) {
             return glob.sync(item).map(function globMap(match) {
               if (relPath === match) {
@@ -37,19 +37,21 @@ exports.handlers = {
               return true;
             });
           });
-        };
+        }
+        return relPath;
       });
 
-      cache.set( "excludedFiles", excludeArr, function(err, success){
-        if (!err && success) {
-          if (!success) {
-            err = new Error("Exclude file parsing failed.");
-            throw (err);
+      cache.set("excludedFiles", excludeArr,
+        function excludedFiles(error, success) {
+          if (!error && success) {
+            if (!success) {
+              error = new Error("Exclude file parsing failed.");
+              throw (error);
+            }
           }
-        }
-      });
+        });
     }
-  }
+  },
 };
 
 exports.astNodeVisitor = {
@@ -61,24 +63,22 @@ exports.astNodeVisitor = {
       var relPath = cache.get(currentSourceName);
 
       // If the file is in the array of files to exclude, do not process.
-      if (cache.get("excludedFiles").indexOf(relPath) != -1) {
+      if (cache.get("excludedFiles").indexOf(relPath) !== -1) {
         return;
       }
 
       // If the comment is non-existant, or a one-line comment (e.g., a
       // `@lends` tag), then create a new comment for the file.
       if (node.comments[0] === undefined) {
-        err = new Error("No toplevel comment for JSDoc in " +
-                        currentSourceName);
-        throw (err);
+        throw (new Error("No toplevel comment for JSDoc in " +
+                        currentSourceName));
       }
 
       // If the configuration file is empty, do nothing. Otherwise store
       // value in conf.
       if (config.schema === undefined) {
-        err = new Error("No 'schema' key is defined in " +
-                        "inferModule's configuration.");
-        throw (err);
+        throw (new Error("No 'schema' key is defined in " +
+                        "inferModule's configuration."));
       }
 
       // If the JSDoc comment already has a module tag, do not process.
