@@ -1,22 +1,18 @@
 var path = require("path");
 var glob = require("glob");
 var env = require("jsdoc/env");
-var NodeCache = require("node-cache");
 
 /* global process, exports */
 
 var config = env.conf.inferModule || {};
-var cache = new NodeCache();
+var cache = Object.create(null);
 
 exports.handlers = {
   parseBegin: function parseBegin(e) {
     "use strict";
 
     // Try to retrieve cached files, otherwise cache the exlcuded files.
-    try {
-      cache.get("excludedFiles", true);
-    }
-    catch (err) {
+    if (cache.excludedFiles === undefined) {
       var excludeArr = [];
 
       e.sourcefiles.map(function fileMap(file) {
@@ -25,7 +21,7 @@ exports.handlers = {
         relPath = relPath + "/" + parsedPath.base;
 
         // Set the relative file path in cache for later module naming.
-        cache.set(file, relPath);
+        cache[file] = relPath;
 
         // If the exclude object is present, test for files to exclude.
         if (config.exclude !== undefined) {
@@ -41,15 +37,7 @@ exports.handlers = {
         return relPath;
       });
 
-      cache.set("excludedFiles", excludeArr,
-        function excludedFiles(error, success) {
-          if (!error && success) {
-            if (!success) {
-              error = new Error("Exclude file parsing failed.");
-              throw (error);
-            }
-          }
-        });
+      cache.excludedFiles = excludeArr;
     }
   },
 };
@@ -60,10 +48,10 @@ exports.astNodeVisitor = {
 
     if (node.comments !== undefined) {
       // Retrieve the relative file path from cache.
-      var relPath = cache.get(currentSourceName);
+      var relPath = cache[currentSourceName];
 
       // If the file is in the array of files to exclude, do not process.
-      if (cache.get("excludedFiles").indexOf(relPath) !== -1) {
+      if (cache.excludedFiles.indexOf(relPath) !== -1) {
         return;
       }
 
