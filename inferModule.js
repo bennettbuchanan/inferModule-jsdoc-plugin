@@ -12,7 +12,7 @@ exports.handlers = {
   parseBegin: function parseBegin(e) {
     "use strict";
 
-    e.sourcefiles.map(function fileMap(file) {
+    e.sourcefiles.forEach(function fileMap(file) {
       var parsedPath = path.parse(file);
       var relPath = parsedPath.dir.replace(process.cwd() + "/", "");
       relPath = relPath + "/" + parsedPath.base;
@@ -31,7 +31,6 @@ exports.handlers = {
           });
         });
       }
-      return relPath;
     });
   },
 };
