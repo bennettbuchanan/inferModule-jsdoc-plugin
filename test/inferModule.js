@@ -111,13 +111,16 @@ describe("JSDoc Command line test.", function() {
   before(function before(done) {
 
     // Use command to run JSDoc from the command line to test integration.
-    exec("node_modules/.bin/jsdoc test/lib/a.js -c test/conf.json -d test/out ;"
-         + " rm -rf test/out/*",
+    exec("node_modules/.bin/jsdoc test/lib/a.js -c test/conf.json -d test/out",
          function execute(error, stdout, stderr) {
            if (error) done(error);
            captured_stdout = stdout;
            done();
          });
+  });
+
+  afterEach(function afterEach(done) {
+    exec("rm -rf test/out/*", done);
   });
 
   it("Plugin with does not cause JSDoc to throw errors.", function() {
