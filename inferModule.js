@@ -6,39 +6,33 @@ var env = require("jsdoc/env");
 
 var config = env.conf.inferModule || {};
 var cache = Object.create(null);
+var excludedFiles = [];
 
 exports.handlers = {
   parseBegin: function parseBegin(e) {
     "use strict";
 
-    // Try to retrieve cached files, otherwise cache the exlcuded files.
-    if (cache.excludedFiles === undefined) {
-      var excludeArr = [];
+    e.sourcefiles.map(function fileMap(file) {
+      var parsedPath = path.parse(file);
+      var relPath = parsedPath.dir.replace(process.cwd() + "/", "");
+      relPath = relPath + "/" + parsedPath.base;
 
-      e.sourcefiles.map(function fileMap(file) {
-        var parsedPath = path.parse(file);
-        var relPath = parsedPath.dir.replace(process.cwd() + "/", "");
-        relPath = relPath + "/" + parsedPath.base;
+      // Set the relative file path in cache for later module naming.
+      cache[file] = relPath;
 
-        // Set the relative file path in cache for later module naming.
-        cache[file] = relPath;
-
-        // If the exclude object is present, test for files to exclude.
-        if (config.exclude !== undefined) {
-          config.exclude.map(function excludeMap(item) {
-            return glob.sync(item).map(function globMap(match) {
-              if (relPath === match) {
-                excludeArr.push(match);
-              }
-              return true;
-            });
+      // If the exclude object is present, test for files to exclude.
+      if (config.exclude !== undefined) {
+        config.exclude.map(function excludeMap(item) {
+          return glob.sync(item).map(function globMap(match) {
+            if (relPath === match) {
+              excludedFiles.push(match);
+            }
+            return true;
           });
-        }
-        return relPath;
-      });
-
-      cache.excludedFiles = excludeArr;
-    }
+        });
+      }
+      return relPath;
+    });
   },
 };
 
@@ -51,7 +45,7 @@ exports.astNodeVisitor = {
       var relPath = cache[currentSourceName];
 
       // If the file is in the array of files to exclude, do not process.
-      if (cache.excludedFiles.indexOf(relPath) !== -1) {
+      if (excludedFiles.indexOf(relPath) !== -1) {
         return;
       }
 
