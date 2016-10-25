@@ -3,7 +3,7 @@
     "inferModule": {
         "exclude": [],
         "schema": [
-            { "from": "", "to": ""}
+            { "from": "^test/lib/(.*)$", "to": "$1"}
         ]
     }
 }
