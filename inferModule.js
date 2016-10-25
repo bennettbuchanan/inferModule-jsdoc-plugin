@@ -53,8 +53,6 @@ exports.astNodeVisitor = {
         return;
       }
 
-      // If the comment is non-existant, or a one-line comment (e.g., a
-      // `@lends` tag), then create a new comment for the file.
       if (node.comments[0] === undefined) {
         throw (new Error("No toplevel comment for JSDoc in " +
                         currentSourceName));
