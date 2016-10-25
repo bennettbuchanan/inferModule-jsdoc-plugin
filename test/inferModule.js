@@ -37,6 +37,21 @@ describe("inferModule.visitNode", function describe() {
     mockery.registerMock("jsdoc/env", {
       conf: opConf,
     });
+
+    // When we run the plugin directly here, this module does not exist. It does
+    // exist when jsdoc loads the plugin.
+    mockery.registerMock("jsdoc/util/logger", {
+      error: function () {
+        throw new Error("error called on mocked logger");
+      },
+      fatal: function () {
+        throw new Error("fatal called on mocked logger");
+      },
+      warn: function () {
+        throw new Error("warn called on mocked logger");
+      }
+    });
+
     inferModule = require("../inferModule.js");
     visitNode = inferModule.astNodeVisitor.visitNode;
     parseBegin = inferModule.handlers.parseBegin;
@@ -106,24 +121,31 @@ describe("JSDoc Command line test.", function() {
   // Avoid 2000ms timeouts due to JSDoc processesing.
   this.timeout(15000);
 
-  var captured_stdout;
-
-  before(function before(done) {
-
-    // Use command to run JSDoc from the command line to test integration.
-    exec("node_modules/.bin/jsdoc test/lib/a.js -c test/conf.json -d test/out",
-         function execute(error, stdout, stderr) {
-           if (error) done(error);
-           captured_stdout = stdout;
-           done();
-         });
-  });
-
   afterEach(function afterEach(done) {
     exec("rm -rf test/out/*", done);
   });
 
-  it("Plugin with does not cause JSDoc to throw errors.", function() {
-    expect(captured_stdout).to.equal("");
+  function execJSDoc(args, cb) {
+    exec("node_modules/.bin/jsdoc -c test/conf.json -d test/out " + args, cb);
+  }
+
+  it("Plugin with does not cause JSDoc to throw errors.", function(done) {
+    execJSDoc("test/lib/a.js", function execute(error, stdout, stderr) {
+      if (error) done(error);
+      expect(stdout).to.equal("");
+      done();
+    });
+  });
+
+  it("An error is raised when a document has no top level comment",
+     function(done) {
+    execJSDoc("test/lib/noComment.js", function execute(error, stdout, stderr) {
+      if (error) {
+        expect(error.toString()).to
+          .include("FATAL: No toplevel comment for JSDoc");
+        return done();
+      }
+      return done(new Error("did not get an error!"));
+    });
   });
 });

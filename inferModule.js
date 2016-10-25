@@ -1,6 +1,7 @@
 var path = require("path");
 var glob = require("glob");
 var env = require("jsdoc/env");
+var logger = require("jsdoc/util/logger");
 
 /* global process, exports */
 
@@ -54,8 +55,7 @@ exports.astNodeVisitor = {
       }
 
       if (node.comments[0] === undefined) {
-        throw (new Error("No toplevel comment for JSDoc in " +
-                        currentSourceName));
+        logger.fatal("No toplevel comment for JSDoc in " + currentSourceName);
       }
 
       // If the JSDoc comment already has a module tag, do not process.
