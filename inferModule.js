@@ -12,6 +12,11 @@ exports.handlers = {
   parseBegin: function parseBegin(e) {
     "use strict";
 
+    if (config.schema === undefined) {
+      throw (new Error("No 'schema' key is defined in " +
+                       "inferModule's configuration."));
+    }
+
     e.sourcefiles.forEach(function fileMap(file) {
       var parsedPath = path.parse(file);
       var relPath = parsedPath.dir.replace(process.cwd() + "/", "");
@@ -53,13 +58,6 @@ exports.astNodeVisitor = {
       if (node.comments[0] === undefined) {
         throw (new Error("No toplevel comment for JSDoc in " +
                         currentSourceName));
-      }
-
-      // If the configuration file is empty, do nothing. Otherwise store
-      // value in conf.
-      if (config.schema === undefined) {
-        throw (new Error("No 'schema' key is defined in " +
-                        "inferModule's configuration."));
       }
 
       // If the JSDoc comment already has a module tag, do not process.
