@@ -14,8 +14,8 @@ exports.handlers = {
     "use strict";
 
     if (config.schema === undefined) {
-      throw (new Error("No 'schema' key is defined in " +
-                       "inferModule's configuration."));
+      logger.fatal("No 'schema' key is defined in " +
+                   "inferModule's configuration.");
     }
 
     e.sourcefiles.forEach(function fileMap(file) {
@@ -45,15 +45,15 @@ exports.astNodeVisitor = {
   visitNode: function find(node, e, parser, currentSourceName) {
     "use strict";
 
+    // Retrieve the relative file path from cache.
+    var relPath = cache[currentSourceName];
+
+    // If the file is in the array of files to exclude, do not process.
+    if (excludedFiles.indexOf(relPath) !== -1) {
+      return;
+    }
+
     if (node.comments !== undefined) {
-      // Retrieve the relative file path from cache.
-      var relPath = cache[currentSourceName];
-
-      // If the file is in the array of files to exclude, do not process.
-      if (excludedFiles.indexOf(relPath) !== -1) {
-        return;
-      }
-
       if (node.comments[0] === undefined) {
         logger.fatal("No toplevel comment for JSDoc in " + currentSourceName);
       }
