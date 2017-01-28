@@ -1,20 +1,17 @@
+"use strict";
 var expect = require("chai").expect;
 var mockery = require("mockery");
-const exec = require('child_process').exec;
+var exec = require("child_process").exec;
 
 /* global it, describe, beforeEach, afterEach */
 
 describe("inferModule.visitNode", function describe() {
-  "use strict";
-
   var inferModule;
-  var visitNode;
   var parseBegin;
-  var node;
+  var jsdocCommentFound;
   var opConf;
 
   beforeEach(function beforeEach() {
-    node = { comments: [{ raw: "/**" }] };
     opConf = {
       inferModule: {
         exclude: [],
@@ -37,90 +34,136 @@ describe("inferModule.visitNode", function describe() {
     mockery.registerMock("jsdoc/env", {
       conf: opConf,
     });
+
+    // When we run the plugin directly here, this module does not exist. It does
+    // exist when jsdoc loads the plugin.
+    mockery.registerMock("jsdoc/util/logger", {
+      error: function error() {
+        throw new Error("error called on mocked logger");
+      },
+      fatal: function fatal() {
+        throw new Error("fatal called on mocked logger");
+      },
+      warn: function warn() {
+        throw new Error("warn called on mocked logger");
+      },
+    });
+
+    // eslint-disable-next-line global-require
     inferModule = require("../inferModule.js");
-    visitNode = inferModule.astNodeVisitor.visitNode;
     parseBegin = inferModule.handlers.parseBegin;
+    jsdocCommentFound = inferModule.handlers.jsdocCommentFound;
   });
 
   afterEach(function afterEach() {
     mockery.disable();
   });
 
+  function test(source, comment) {
+    comment = comment || "/**\n*/";
+    parseBegin({ sourcefiles: [source] });
+    var e = {
+      filename: source,
+      comment: comment,
+    };
+
+    jsdocCommentFound(e);
+    return e.comment;
+  }
+
   it("Converts the path appropriately for module naming.", function it() {
-    parseBegin({ sourcefiles: [ 'lib/foo/a.js' ] });
-    visitNode(node, {}, {}, "lib/foo/a.js");
-    expect(node.comments[0].raw).to.equal("/**\n * @module bar/a");
+    expect(test("lib/foo/a.js")).to.equal("/**\n * @module bar/a\n*/");
   });
 
-  it("Regiters different mapping.", function it() {
-    parseBegin({ sourcefiles: [ 'lib/fin/a.js' ] });
-    visitNode(node, {}, {}, "lib/fin/a.js");
-    expect(node.comments[0].raw).to.equal("/**\n * @module baz/a");
+  it("Registers different mapping.", function it() {
+    expect(test("lib/fin/a.js")).to.equal("/**\n * @module baz/a\n*/");
   });
 
   it("Handles a file with no path.", function it() {
-    parseBegin({ sourcefiles: [ 'lib/a.js' ] });
-    visitNode(node, {}, {}, "lib/a.js");
-    expect(node.comments[0].raw).to.equal("/**\n * @module a");
+    expect(test("lib/a.js")).to.equal("/**\n * @module a\n*/");
   });
 
   it("Does not alter naming of differing extensions.", function it() {
-    parseBegin({ sourcefiles: [ 'lib/a.py' ] });
-    visitNode(node, {}, {}, "lib/a.py");
-    expect(node.comments[0].raw).to.equal("/**\n * @module lib/a");
+    expect(test("lib/a.py")).to.equal("/**\n * @module lib/a\n*/");
   });
 
   it("Does not process files that match the exclude object.", function it() {
     // Note that when testing exlude, the file itself has to actually exist.
     opConf.inferModule.exclude = ["test/*.js"];
-    parseBegin({ sourcefiles: [ 'test/inferModule.js' ] });
-    visitNode(node, {}, {}, "test/inferModule.js");
-    expect(node.comments[0].raw).to.equal("/**");
+    expect(test("test/inferModule.js")).to.equal("/**\n*/");
   });
 
   it("If module tag is already present, use it.", function it() {
-    parseBegin({ sourcefiles: [ 'lib/a.js' ] });
-    opConf.inferModule.exclude = [];
     var originalComment = "**\n * @module this/that";
-    node.comments[0].raw = originalComment;
-    visitNode(node, {}, {}, "lib/a.js");
-    expect(node.comments[0].raw).to.equal(originalComment);
+    expect(test("lib/a.js", originalComment)).to.equal(originalComment);
   });
 
 
-  it("If a file is renamed and then matched again, the additional renaming " +
-     "is disregarded.", function it() {
-       opConf.inferModule.schema =
-         [
-           { "from": "lib/a.js", "to": "lib/b" },
-           { "from": "lib/b", "to": "lib/c" }
-         ];
+  it("The schema array applies only once to a file", function it() {
+    opConf.inferModule.schema = [
+      { from: "lib/a.js", to: "lib/b" },
+      { from: "lib/b", to: "lib/c" },
+    ];
 
-       parseBegin({ sourcefiles: [ 'lib/a.js' ] });
-       visitNode(node, {}, {}, "lib/a.js");
-       expect(node.comments[0].raw).to.equal("/**\n * @module lib/b");
-     });
+    expect(test("lib/a.js")).to.equal("/**\n * @module lib/b\n*/");
+  });
 });
 
-describe("JSDoc Command line test.", function() {
+describe("JSDoc Command line test.", function describe() {
   // Avoid 2000ms timeouts due to JSDoc processesing.
   this.timeout(15000);
 
-  var captured_stdout;
-
-  before(function before(done) {
-
-    // Use command to run JSDoc from the command line to test integration.
-    exec("node_modules/.bin/jsdoc test/lib/a.js -c test/conf.json -d test/out ;"
-         + " rm -rf test/out/*",
-         function execute(error, stdout, stderr) {
-           if (error) done(error);
-           captured_stdout = stdout;
-           done();
-         });
+  afterEach(function afterEach(done) {
+    exec("rm -rf test/out/*", done);
   });
 
-  it("Plugin with does not cause JSDoc to throw errors.", function() {
-    expect(captured_stdout).to.equal("");
+  function execJSDoc(args, cb) {
+    exec("node_modules/.bin/jsdoc -X -c test/conf.json -d test/out " + args, cb);
+  }
+
+  function extractModules(output) {
+    var doclets = JSON.parse(output);
+    var ret = [];
+    for (var docletIx = 0; docletIx < doclets.length; ++docletIx) {
+      var doclet = doclets[docletIx];
+      if (doclet.kind === "module") {
+        ret.push(doclet.name);
+      }
+    }
+    return ret;
+  }
+
+  it("Handles an AMD module fine.", function it(done) {
+    execJSDoc("test/lib/a.js", function execute(error, stdout) {
+      if (error) {
+        done(error);
+        return;
+      }
+      expect(extractModules(stdout)).to.deep.equal(["a"]);
+      done();
+    });
+  });
+
+  it("Handles a CommonJS module fine.", function it(done) {
+    execJSDoc("test/lib/CommonJS.js", function execute(error, stdout) {
+      if (error) {
+        done(error);
+        return;
+      }
+      expect(extractModules(stdout)).to.deep.equal(["CommonJS"]);
+      done();
+    });
+  });
+
+  it("Error when a document has no top level comment", function it(done) {
+    execJSDoc("test/lib/noComment.js", function execute(error) {
+      if (error) {
+        expect(error.toString()).to
+          .include("FATAL: No toplevel comment for JSDoc");
+        done();
+        return;
+      }
+      done(new Error("did not get an error!"));
+    });
   });
 });
